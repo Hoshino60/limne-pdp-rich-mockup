@@ -1,0 +1,291 @@
+<!doctype html><html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex,nofollow"><title>商品ページ実装手順（リッチコイル・エントリー）</title><style>
+:root{--fg:#1d2433;--sub:#5b6475;--line:#d9dee7;--bg:#fff;--soft:#f5f7fa;--acc:#1B224C;--code:#f3f4f7}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--fg);font-family:"Yu Gothic","YuGothic","Hiragino Sans","Noto Sans JP",Meiryo,sans-serif;line-height:1.8;font-size:15px}
+main{max-width:980px;margin:0 auto;padding:24px 16px 80px}h1{font-size:24px;margin:8px 0 16px}h2{font-size:20px;margin:36px 0 12px;padding-bottom:6px;border-bottom:2px solid var(--acc)}
+h3{font-size:17px;margin:28px 0 8px}h4{font-size:15px;margin:20px 0 6px}a{color:#1a56b8}code{background:var(--code);padding:1px 5px;border-radius:4px;font-size:13px;word-break:break-all}
+.tw{overflow-x:auto}table{border-collapse:collapse;width:100%;margin:10px 0;font-size:13.5px}th,td{border:1px solid var(--line);padding:6px 8px;vertical-align:top;text-align:left}th{background:var(--soft)}
+blockquote{margin:8px 0;padding:8px 12px;border-left:4px solid var(--line);background:var(--soft)}
+pre{background:var(--code);padding:12px;border-radius:6px;overflow-x:auto;font-size:12.5px;line-height:1.6;white-space:pre-wrap;word-break:break-all;margin:0}
+.file{border:1px solid var(--line);border-radius:8px;margin:14px 0;overflow:hidden}.file h4{margin:0;padding:8px 12px;background:var(--soft);display:flex;justify-content:space-between;gap:8px;align-items:center;flex-wrap:wrap}
+.file .body{padding:12px}.preview{border:1px dashed var(--line);padding:10px 12px;margin-bottom:10px}.preview p{margin:0 0 8px}
+button.copy{font:inherit;font-size:12.5px;padding:3px 10px;border:1px solid var(--acc);background:#fff;color:var(--acc);border-radius:4px;cursor:pointer}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px}.card{border:1px solid var(--line);border-radius:8px;padding:14px 16px}.card h3{margin:0 0 6px}
+.lab{font-size:12px;color:var(--sub)}
+</style></head><body><main><h1 id="h-61025cf1">商品ページ（リッチコイル・エントリー）：実装の手順</h1>
+<p>確認タブ（<a href="https://docs.google.com/document/d/1XIQ5-VYkfUNyd2IXB9AHOY5vojYrKXCD6EyDimRCpDo/edit?tab=t.hv5n28wzywgr">https://docs.google.com/document/d/1XIQ5-VYkfUNyd2IXB9AHOY5vojYrKXCD6EyDimRCpDo/edit?tab=t.hv5n28wzywgr</a> ）で決まった内容を、公開中の商品ページに入れるための一式です。見本（<code>mock_リッチコイル_実装版.html</code>・<code>mock_エントリー_実装版.html</code>）は、2026年11月3日の公開中のページに、この手順の変更をすべて当てたものです。</p>
+<h2 id="h-78adce7d">1. このフォルダのファイル</h2>
+<div class="tw"><table><thead><tr><th>ファイル</th><th>使い方</th></tr></thead><tbody><tr><td><code>mock_リッチコイル_実装版.html</code>・<code>mock_エントリー_実装版.html</code></td><td>実装後の文と並びの見え方。ブラウザで開く（画像と書式は limne.jp から読む）。テーマとアプリのスクリプトは止めているので、ギャラリーの切り替え・メニュー・サイズの選択欄・レビューの件数の表示は実際と違う。カートに追加するボタンは押しても何も送らない。購入欄の見え方の最終確認は、複製したテーマのプレビューで行う</td></tr><tr><td><code>shopify/snippets/limne-pdp-lead.liquid</code></td><td>新しく足すスニペット。リッチコイルの商品名の下の要点</td></tr><tr><td><code>shopify/snippets/limne-pdp-icons.liquid</code></td><td>新しく足すスニペット。購入欄のアイコン（送料の文言を直したもの）と、その下の保証の注記</td></tr><tr><td><code>shopify/code/&lt;商品&gt;/*.html</code></td><td>スニペットを使わない場合に、購入欄のブロックへそのまま入れるコード（<code>icons_block.html</code>＝アイコンと注記、<code>lead_block.html</code>＝リッチコイルの要点、<code>long_banner_block.html</code>＝リッチコイルの210cmロングの案内画像。altを直したもの）。スニペットを使っても、このコードを入れても、表示は同じ</td></tr><tr><td><code>shopify/paste/&lt;商品&gt;/*.html</code></td><td>テーマエディタの本文の欄に入れる文。ブラウザで開いて全部選んでコピーし、欄の中身を消して貼り付ける（段落・太字・リンクがそのまま入る）</td></tr><tr><td><code>shopify/changes_&lt;商品&gt;.json</code></td><td>欄ごとの「今の値→新しい値」（HTML）。コードエディタでテンプレートのJSONを直す場合や、機械で突き合わせる場合に使う</td></tr></tbody></table></div>
+<h2 id="h-96ace7ce">2. 前提</h2>
+<ul><li>テーマ：Impulse 6.0.1（2026年11月3日に公開中のテーマ「2026/10/27～　AutumnSALE終了」で確認）</li><li>商品テンプレート：リッチコイル＝<code>product.llmo_mattress_rich</code>、エントリー＝<code>product.llmo_entry</code>（2026年11月3日の商品データで、それぞれの商品に割り当てられていることを確認）。ほかの商品が同じテンプレートを使っていないかは、テーマエディタでテンプレートを開いたときに出る、割り当て済みの商品の数で確かめる。2つ以上の商品に割り当てられていたら、直す前にご連絡ください</li><li>「今の値」は2026年11月3日に公開中のページから取りました。その後にページを直している場合は、今の値が違うことがあります（違っていたら、直す前にご連絡ください）</li><li>テーマ（文・並び・スニペット・ブロック）の作業は、公開していないテーマ（今のテーマの複製）で行い、見本と見比べてから公開します</li><li>「選ばれる理由」の段の画像の代替テキスト（alt）は、テーマではなく「コンテンツ」→「ファイル」の画像に付く情報で、変えるとすぐ公開中のページにも反映されます（テーマを複製しても分けられません）。テーマを公開するときに、あわせて変えてください（4章の代替テキストの節）</li><li>公開の前に、先方で直していただくこと：ショッピングガイド（<a href="https://limne.jp/pages/shopping_guide#8">https://limne.jp/pages/shopping_guide#8</a> ）の返金保証の〈ご注意事項〉に「※リムネマットレス エントリーモデルは対象外です。」とあります。同じ節の＜対象商品＞には「エントリーモデルの120日間完全返金有償保証オプションをご購入いただいた方」とあり、直したエントリーのページも、有償オプションを申し込めば対象になると案内します。ガイドの〈ご注意事項〉の1文を直してから、エントリーの変更を公開してください</li></ul>
+<h2 id="h-ecdb4d07">3. 手順の流れ</h2>
+<ol><li>テーマを複製する（「オンラインストア」→「テーマ」→ 公開中のテーマの「…」→「複製」）</li><li>スニペットを2つ足す：複製したテーマの「…」→「コードを編集」→「snippets」に <code>limne-pdp-lead.liquid</code>・<code>limne-pdp-icons.liquid</code> を新しく作り、中身をこのフォルダのファイルの内容に置き換えて保存</li><li>複製したテーマの「カスタマイズ」（管理画面によっては「テーマを編集」）で、商品ごとに4章・5章のとおり直す（上のページ選択で「商品」→ テンプレート <code>llmo_mattress_rich</code> または <code>llmo_entry</code>）。プレビューに出す商品は、その商品（リッチコイル／エントリー）を選ぶ。直したら、右上の「保存」を押す</li><li>6章のとおり、複製したテーマのプレビューで見本と見比べ、購入の操作を確かめる</li><li>ショッピングガイドの1文（2章の最後）を先方で直したことを確かめてから、複製したテーマを「公開」する。公開したら、すぐに画像の代替テキスト（4章の代替テキストの節）を変え、公開中のページで6章をもう一度確かめる</li><li>戻すときは、元のテーマ（公開前に公開していたテーマ）をもう一度「公開」し、代替テキストを、この手順書の「今」の値（空欄）に戻す</li></ol>
+<h2 id="h-54b044a6">4. リッチコイル（<a href="https://limne.jp/products/mattress-rich">https://limne.jp/products/mattress-rich</a> ）</h2>
+<h3 id="h-9917f24d">4-1. 商品名の下の要点（新しく足す）</h3>
+<p>商品情報のセクション（購入欄のブロックが並ぶセクション）に、コードを入れられるブロック（今の購入欄のアイコンと同じ種類のブロック。Impulseでは「カスタムLiquid」または「HTML」）を足し、ブロックの並びのいちばん上（レビューの星のブロックの上）へ移動します。中身は、<code>{% render 'limne-pdp-lead' %}</code> の1行（スニペットを使う場合）か、<code>shopify/code/mattress-rich/lead_block.html</code> の中身（スニペットを使わない場合）です。表示される文：</p>
+<blockquote>上下二層のポケットコイルで身体を受け止め、沈み込みすぎを防ぐ設計です。包み込まれるような柔らかさと、しっかり支える反発力の両立を目指しました。</blockquote>
+<h3 id="h-81f96d87">4-2. 購入欄のアイコンと保証の注記</h3>
+<p>購入欄のブロックのうち、中身のコードが <code>&lt;div class="text-with-icons__blocks</code> で始まり、「10年品質保証」「月々3000円～無金利分割支払い」「全品送料無料」の文があるブロックを探します（11月3日の公開中のページでは、引取りサービスの折りたたみの下、SNSの共有ボタンの上に出ています。公開中のページのHTMLから見ると、コードを入れる欄（Impulseの「カスタムLiquid」「HTML」などのブロック）に入っていると考えられますが、管理画面では確かめていません）。テーマエディタでそのブロックを開き、このコードを編集できる欄があれば、欄の中身を、<code>{% render 'limne-pdp-icons' %}</code> の1行（スニペットを使う場合。ブロックがLiquidを受け付けるとき）か、<code>shopify/code/mattress-rich/icons_block.html</code> の中身（スニペットを使わない場合）に置き換えます。テーマエディタにそのような欄が見つからない場合（テーマのファイルに直接書かれている場合）は、「コードを編集」で、<code>text-with-icons__blocks</code> を含むファイル（<code>sections</code> または <code>snippets</code> の中）を探して、同じ部分を置き換えてください。見つからなければ、作業を止めてご連絡ください。アイコンの4つ目（エントリーは3つ目）の文字が「全品送料無料（沖縄、一部地域を除く）」になり、その下に保証の注記が出ます。アイコンの画像には、空の代替テキスト（<code>alt=""</code>）を付けました（隣の文と同じ内容のため）。</p>
+<blockquote>※120日間完全返金保証：無金利分割決済でご購入の場合は30日間です。ご返金はマットレス本体金額のみ。公式サイトでご購入の方に限り1度だけ、所定の最低利用期間などの条件があります。<br>※10年品質保証：適正にご使用いただいたにもかかわらず3.0cm以上のへこみが確認された場合に、無償で交換等を行います。マットレスカバーや生地の経年劣化などは対象外です。<br>条件の詳細はショッピングガイドをご確認ください。</blockquote>
+<h3 id="h-37a3a80c">4-3. 「選ばれる理由」の各段</h3>
+<p>段は、今の見出しで見分けてください（テーマエディタの左の一覧に出る名前は「テキストと画像」などです）。見出し・小見出しは、欄の文字をそのまま入れ替えます。本文は、貼り付け用のファイルを使います。</p>
+<div class="tw"><table><thead><tr><th>段（今の見出し）</th><th>欄</th><th>今</th><th>直したあと</th></tr></thead><tbody><tr><td>「選ばれる理由」の導入（リッチテキスト）</td><td>本文（テキスト）</td><td>（今の本文をすべて消してから貼る）</td><td>貼り付け用：<code>shopify/paste/mattress-rich/01_rich_text_i7Uicw.html</code></td></tr><tr><td>旧1段目「5つ星ホテルを「超える」寝心地」</td><td>本文（テキスト）</td><td>（今の本文をすべて消してから貼る）</td><td>貼り付け用：<code>shopify/paste/mattress-rich/02_text_and_image_VAnVNP.html</code></td></tr><tr><td>旧2段目「日本企画の二層ポケットコイルモデル」</td><td>見出し</td><td>日本企画の二層ポケットコイルモデル</td><td>包み込まれるような柔らかさと、しっかり支える反発力</td></tr><tr><td>旧2段目「日本企画の二層ポケットコイルモデル」</td><td>本文（テキスト）</td><td>（今の本文をすべて消してから貼る）</td><td>貼り付け用：<code>shopify/paste/mattress-rich/03_text_and_image_4QKGxt.html</code></td></tr><tr><td>旧3段目「睡眠のプロが導き出す「超体圧分散」」</td><td>小見出し</td><td>（空欄）</td><td>睡眠学会前理事・神山潤 監修</td></tr><tr><td>旧3段目「睡眠のプロが導き出す「超体圧分散」」</td><td>見出し</td><td>睡眠のプロが導き出す「超体圧分散」</td><td>沈み込みすぎないことを重視した、体圧分散設計の二層構造</td></tr><tr><td>旧3段目「睡眠のプロが導き出す「超体圧分散」」</td><td>本文（テキスト）</td><td>（今の本文をすべて消してから貼る）</td><td>貼り付け用：<code>shopify/paste/mattress-rich/04_text_and_image_nL9WnJ.html</code></td></tr><tr><td>旧4段目「理学療法士の矢間先生も注目」</td><td>小見出し</td><td>マットレス選びは体圧分散性の高さが重要</td><td>（空欄にする）</td></tr><tr><td>旧4段目「理学療法士の矢間先生も注目」</td><td>見出し</td><td>理学療法士の矢間先生も注目</td><td>自分に合った寝具選びについて（理学療法士・矢間先生）</td></tr><tr><td>旧5段目「通気性・衛生面に配慮」</td><td>見出し</td><td>通気性・衛生面に配慮</td><td>通気に配慮した構造と、防ダニ・抗菌加工</td></tr><tr><td>旧5段目「通気性・衛生面に配慮」</td><td>本文（テキスト）</td><td>（今の本文をすべて消してから貼る）</td><td>貼り付け用：<code>shopify/paste/mattress-rich/05_text_and_image_WyJiP4.html</code></td></tr><tr><td>旧6段目「赤ちゃんや敏感肌の人にも優しい素材」（見出しと1つ目の段落は現行のまま）</td><td>本文（テキスト）</td><td>（今の本文をすべて消してから貼る）</td><td>貼り付け用：<code>shopify/paste/mattress-rich/06_text_and_image_r7Jg6N.html</code></td></tr><tr><td>旧7段目「20万回の耐久テストと完全返金保証」（見出しは現行のまま）</td><td>本文（テキスト）</td><td>（今の本文をすべて消してから貼る）</td><td>貼り付け用：<code>shopify/paste/mattress-rich/07_text_and_image_kmxkQg.html</code></td></tr></tbody></table></div>
+<h3 id="h-1cc44373">4-4. 段の並び順と画像の左右</h3>
+<p>テーマエディタの左の一覧で、段（セクション）を次の順に並べ替えます。並べ替えると画像の左右が交互にならなくなるので、下の段だけ「画像の位置（レイアウト）」の設定を切り替えます。</p>
+<ol><li>「選ばれる理由」の導入（リッチテキスト）（rich_text_i7Uicw）</li><li>旧2段目「日本企画の二層ポケットコイルモデル」（text_and_image_4QKGxt）</li><li>旧3段目「睡眠のプロが導き出す「超体圧分散」」（text_and_image_nL9WnJ）</li><li>旧1段目「5つ星ホテルを「超える」寝心地」（text_and_image_VAnVNP）</li><li>旧5段目「通気性・衛生面に配慮」（text_and_image_WyJiP4）</li><li>旧7段目「20万回の耐久テストと完全返金保証」（見出しは現行のまま）（text_and_image_kmxkQg）</li><li>旧6段目「赤ちゃんや敏感肌の人にも優しい素材」（見出しと1つ目の段落は現行のまま）（text_and_image_r7Jg6N）</li><li>旧4段目「理学療法士の矢間先生も注目」（text_and_image_EgrEQr）</li><li>（新しく足す）「リッチテキスト」のセクション（4-5）</li><li>最後の段「圧縮コンパクト梱包でお届け」（文は変えない）（text_and_image_pMHttV）</li></ol>
+<div class="tw"><table><thead><tr><th>段</th><th>今</th><th>直したあと</th></tr></thead><tbody><tr><td>旧1段目「5つ星ホテルを「超える」寝心地」（text_and_image_VAnVNP）</td><td>画像が右</td><td>画像が左</td></tr><tr><td>旧7段目「20万回の耐久テストと完全返金保証」（見出しは現行のまま）（text_and_image_kmxkQg）</td><td>画像が右</td><td>画像が左</td></tr><tr><td>旧6段目「赤ちゃんや敏感肌の人にも優しい素材」（見出しと1つ目の段落は現行のまま）（text_and_image_r7Jg6N）</td><td>画像が左</td><td>画像が右</td></tr><tr><td>最後の段「圧縮コンパクト梱包でお届け」（文は変えない）（text_and_image_pMHttV）</td><td>画像が左</td><td>画像が右</td></tr></tbody></table></div>
+<h3 id="h-73ba7638">4-5. 段の下の文（新しく足す）</h3>
+<p>「セクションを追加」→「リッチテキスト」を足し、「理学療法士の矢間先生も注目」の段（直したあとの見出しは「自分に合った寝具選びについて（理学療法士・矢間先生）」）のすぐ下、「圧縮コンパクト梱包でお届け」の段の上に置きます。見出しのブロックは消し、テキストのブロックを1つにします。セクションの設定は、テキストの配置＝「左」、幅を狭くする（Narrow column）＝オン、区切り線（Show section divider）＝オフ。テキストのブロックの「テキストを大きくする（Enlarge text）」はオフにします（参考：「選ばれる理由」の導入のセクションは、幅を狭くする＝オン、テキストを大きくする＝オン）。本文に <code>shopify/paste/mattress-rich/closing_section_text.html</code> を貼り付けます（リンク2つ：リカバリーマットレスのLP <a href="https://limne.jp/pages/limne-recovery-mattress">https://limne.jp/pages/limne-recovery-mattress</a> と、マットレス一覧 <a href="https://limne.jp/collections/mattress">https://limne.jp/collections/mattress</a> ）。</p>
+<blockquote>リッチコイルモデルは、寝返りのしやすさや通気に配慮した二層ポケットコイルの構造設計で、睡眠環境づくりに取り組む「構造設計型」のリカバリーマットレスです。<br>リッチコイルモデルは、特定の効果をうたうものではありません。※LIMNEのマットレスは医療機器ではありません。不眠症をはじめとする疾患の治療を目的とした製品ではありません。<br>構造設計型とは？3つの型の違いと選び方<br>ほかのモデルとの違いは、マットレス一覧でご確認いただけます。</blockquote>
+<h3 id="h-d76be5e9">4-6. よくあるご質問</h3>
+<p>「よくあるご質問」のセクション（公開中のページでは、Shopifyのテーマエディタで作るよくある質問のブロック）で、次の質問の回答の欄を直します（質問の文は変えません）。回答の欄が、太字・リンクの付けられる文の欄なら、貼り付け用のファイルをブラウザで開いてコピーして貼ります。HTMLを入れる欄なら、貼り付け用のファイルの <code>&lt;body&gt;</code> の中のHTMLをそのまま入れます。どちらでも、リンク（ショッピングガイド）と改行が見本と同じになっていることを確かめてください。</p>
+<ul><li>Q.120日間完全返金保証は、返品送料など 発生しますか？：貼り付け用 <code>shopify/paste/mattress-rich/08_blocks_L4fCDm.html</code></li><li>Q.耐久性が心配です。：貼り付け用 <code>shopify/paste/mattress-rich/09_blocks_L4fCDm.html</code></li></ul>
+<h3 id="h-73bc5be0">4-7. 画像の代替テキスト（alt）</h3>
+<p>商品のメディア（ギャラリー）16枚の代替テキストは、11月3日の公開中のページで、すでに案と同じ文が入っています（直す必要はありません）。直すのは次の9枚です。</p>
+<ul><li>「選ばれる理由」の段の画像（テーマを公開したときに変える）：「コンテンツ」→「ファイル」で、下のファイル名の画像を開き、「代替テキスト」に入れて保存します。変えるとすぐ公開中のページに反映されます。「エントリーと共用」の画像は、エントリーのページでも同じ文が代替テキストになります（どちらの商品にも当てはまる文です）</li><li>購入欄の210cmロングの案内画像（テーマ側。複製したテーマで直して、テーマと一緒に公開する）：中身が <code>&lt;a href="<a href="https://limne.jp/products/mattress-rich-coil-long"">https://limne.jp/products/mattress-rich-coil-long"</a></code> で始まるコードの入ったブロック（アイコンと同じく、コードを入れる欄と考えられる。見つからなければ「コードを編集」で <code>210cm.png</code> を含むファイルを探す）の <code>alt=""</code> を、下の文に直します。直したあとのコードは <code>shopify/code/mattress-rich/long_banner_block.html</code></li></ul>
+<div class="tw"><table><thead><tr><th>画像</th><th>ファイル名</th><th>今</th><th>直したあと</th><th>共用</th></tr></thead><tbody><tr><td>1段目の画像（二層コイルの図）</td><td>lmo-rich-twin-new.png</td><td>（空欄）</td><td>上下二層のポケットコイルの構造図（上層・下層）</td><td></td></tr><tr><td>2段目の画像</td><td>llmo-rich-japan-project.png</td><td>（空欄）</td><td>二層に重なったコイルとコイルの配列の接写</td><td></td></tr><tr><td>3段目の画像（監修者）</td><td>rich_lp_01_13_02.png</td><td>（空欄）</td><td>睡眠学会前理事の神山潤先生</td><td></td></tr><tr><td>4段目の画像（理学療法士）</td><td>llmo-rich-yazama-resize.png</td><td>（空欄）</td><td>理学療法士の矢間先生</td><td></td></tr><tr><td>5段目の画像</td><td>llmo-rich-boudani.png</td><td>（空欄）</td><td>底面のメッシュ生地と防ダニ・抗菌加工を示す図</td><td></td></tr><tr><td>6段目の画像（認証）</td><td>lmo-rich-oeko-certi.png</td><td>（空欄）</td><td>OEKO-TEX STANDARD 100とCertiPUR-USの認証ロゴ</td><td>エントリーと共用</td></tr><tr><td>7段目の画像（返金保証）</td><td>llmo-rich-120days.png</td><td>（空欄）</td><td>120日間完全返金保証の案内図（無金利分割決済の場合は30日間。適用条件あり。詳細はショッピングガイド）</td><td></td></tr><tr><td>8段目の画像（梱包）</td><td>llmo-rici-assyuku.jpg</td><td>（空欄）</td><td>圧縮梱包された箱</td><td>エントリーと共用</td></tr><tr><td>購入欄のロングの案内（リンク画像）</td><td>210cm.png</td><td>（空欄）</td><td>リッチコイルモデルの210cmロングサイズを見る</td><td></td></tr></tbody></table></div>
+<h2 id="h-d07de3dd">5. エントリー（<a href="https://limne.jp/products/mattress-entry">https://limne.jp/products/mattress-entry</a> ）</h2>
+<h3 id="h-1b786851">5-1. 購入欄のアイコンと保証の注記</h3>
+<p>購入欄のブロックのうち、中身のコードが <code>&lt;div class="text-with-icons__blocks</code> で始まり、「10年品質保証」「月々3000円～無金利分割支払い」「全品送料無料」の文があるブロックを探します（11月3日の公開中のページでは、引取りサービスの折りたたみの下、SNSの共有ボタンの上に出ています。公開中のページのHTMLから見ると、コードを入れる欄（Impulseの「カスタムLiquid」「HTML」などのブロック）に入っていると考えられますが、管理画面では確かめていません）。テーマエディタでそのブロックを開き、このコードを編集できる欄があれば、欄の中身を、<code>{% render 'limne-pdp-icons' %}</code> の1行（スニペットを使う場合。ブロックがLiquidを受け付けるとき）か、<code>shopify/code/mattress-entry/icons_block.html</code> の中身（スニペットを使わない場合）に置き換えます。テーマエディタにそのような欄が見つからない場合（テーマのファイルに直接書かれている場合）は、「コードを編集」で、<code>text-with-icons__blocks</code> を含むファイル（<code>sections</code> または <code>snippets</code> の中）を探して、同じ部分を置き換えてください。見つからなければ、作業を止めてご連絡ください。アイコンの4つ目（エントリーは3つ目）の文字が「全品送料無料（沖縄、一部地域を除く）」になり、その下に保証の注記が出ます。アイコンの画像には、空の代替テキスト（<code>alt=""</code>）を付けました（隣の文と同じ内容のため）。</p>
+<p>エントリーの今のブロックには、「120日間完全返金保証」のアイコンが、表示されないコメント（<code>&lt;!-- --&gt;</code>）として入っています。新しいコードでも、コメントのまま残しています（今と同じく表示しません）。</p>
+<blockquote>※10年品質保証：適正にご使用いただいたにもかかわらず3.0cm以上のへこみが確認された場合に、無償で交換等を行います。マットレスカバーや生地の経年劣化などは対象外です。<br>条件の詳細はショッピングガイドをご確認ください。</blockquote>
+<h3 id="h-c2b0a018">5-2. 「選ばれる理由」の各段</h3>
+<p>段は、今の見出しで見分けてください（テーマエディタの左の一覧に出る名前は「テキストと画像」などです）。見出し・小見出しは、欄の文字をそのまま入れ替えます。本文は、貼り付け用のファイルを使います。</p>
+<div class="tw"><table><thead><tr><th>段（今の見出し）</th><th>欄</th><th>今</th><th>直したあと</th></tr></thead><tbody><tr><td>段3「あんしんの耐久性と返金保証」</td><td>見出し</td><td>あんしんの耐久性と返金保証</td><td>耐久試験と保証（返金保証は有償オプション）</td></tr><tr><td>段3「あんしんの耐久性と返金保証」</td><td>本文（テキスト）</td><td>（今の本文をすべて消してから貼る）</td><td>貼り付け用：<code>shopify/paste/mattress-entry/01_text_and_image_nahTyE.html</code></td></tr><tr><td>段2「優れた体圧分散性」（見出し・本文は現行のまま）</td><td>本文（テキスト）</td><td>（今の本文をすべて消してから貼る）</td><td>貼り付け用：<code>shopify/paste/mattress-entry/02_text_and_image_ERVLhk.html</code></td></tr><tr><td>段4「日本人にあった設計」（見出し・本文は現行のまま）</td><td>本文（テキスト）</td><td>（今の本文をすべて消してから貼る）</td><td>貼り付け用：<code>shopify/paste/mattress-entry/03_text_and_image_nLyx9d.html</code></td></tr></tbody></table></div>
+<h3 id="h-f84b0e9c">5-3. 段の下の文（新しく足す）</h3>
+<p>「セクションを追加」→「リッチテキスト」を足し、最後の段「圧縮コンパクト梱包でお届け」のすぐ下（よくあるご質問の上）に置きます。見出しのブロックは消し、テキストのブロックを1つにします。セクションの設定は、テキストの配置＝「左」、幅を狭くする（Narrow column）＝オン、区切り線（Show section divider）＝オフ。テキストのブロックの「テキストを大きくする（Enlarge text）」はオフにします（参考：「選ばれる理由」の導入のセクションは、幅を狭くする＝オン、テキストを大きくする＝オン）。本文に <code>shopify/paste/mattress-entry/closing_section_text.html</code> を貼り付けます（リンク2つ：リカバリーマットレスのLP <a href="https://limne.jp/pages/limne-recovery-mattress">https://limne.jp/pages/limne-recovery-mattress</a> と、マットレス一覧 <a href="https://limne.jp/collections/mattress">https://limne.jp/collections/mattress</a> ）。</p>
+<blockquote>エントリーモデルは、寝返りのしやすさや通気に配慮したミルキーコイルの構造設計で、睡眠環境づくりに取り組む「構造設計型」のリカバリーマットレスです。<br>LIMNEの現行マットレスは、特定の効果をうたうものではありません。<br>※LIMNEのマットレスは医療機器ではありません。不眠症をはじめとする疾患の治療を目的とした製品ではありません。<br>構造設計型とは？3つの型の違いと選び方<br>ほかのモデルとの違いは、マットレス一覧でご確認いただけます。</blockquote>
+<h3 id="h-7a417ebe">5-4. よくあるご質問</h3>
+<p>「よくあるご質問」のセクション（公開中のページでは、Shopifyのテーマエディタで作るよくある質問のブロック）で、次の質問の回答の欄を直します（質問の文は変えません）。回答の欄が、太字・リンクの付けられる文の欄なら、貼り付け用のファイルをブラウザで開いてコピーして貼ります。HTMLを入れる欄なら、貼り付け用のファイルの <code>&lt;body&gt;</code> の中のHTMLをそのまま入れます。どちらでも、リンク（ショッピングガイド）と改行が見本と同じになっていることを確かめてください。</p>
+<ul><li>Q.耐久性が心配です。：貼り付け用 <code>shopify/paste/mattress-entry/04_blocks_a8pAet.html</code></li><li>Q.返金保証はありますか？：貼り付け用 <code>shopify/paste/mattress-entry/05_blocks_a8pAet.html</code></li></ul>
+<h3 id="h-d688dad7">5-5. 画像の代替テキスト（alt）</h3>
+<p>エントリーでは作業はありません。ただし、次の画像はリッチコイルと同じファイルなので、リッチコイルの手順（4章の代替テキストの節）で代替テキストを変えると、エントリーのページにも同じ文が出ます（見本にも反映しています）。</p>
+<div class="tw"><table><thead><tr><th>画像</th><th>ファイル名</th><th>今</th><th>変わったあと</th></tr></thead><tbody><tr><td>6段目「赤ちゃんや敏感肌の人にも優しい素材」の画像</td><td>lmo-rich-oeko-certi.png</td><td>（空欄）</td><td>OEKO-TEX STANDARD 100とCertiPUR-USの認証ロゴ</td></tr><tr><td>7段目「圧縮コンパクト梱包でお届け」の画像</td><td>llmo-rici-assyuku.jpg</td><td>（空欄）</td><td>圧縮梱包された箱</td></tr></tbody></table></div>
+<h2 id="h-2a327574">6. 確かめること（複製したテーマのプレビューで）</h2>
+<ul><li>「選ばれる理由」の各段の見出し・本文・並び順・画像の左右が、見本と同じ。テーマエディタで「保存」してある</li><li>リッチコイル：商品名の下に要点が1つだけ出る。画像付きの段の2つ目（直したあとの並び。<code>text_and_image_nL9WnJ</code>）の見出しの上に「睡眠学会前理事・神山潤 監修」が出る</li><li>購入欄：アイコンの送料の文字と、その下の注記が出る。エントリーには「120日間完全返金保証」のアイコンが出ない（今と同じ）</li><li>リンク（ショッピングガイドの保証の節 <a href="https://limne.jp/pages/shopping_guide#8">https://limne.jp/pages/shopping_guide#8</a> ・リカバリーマットレスのLP・マットレス一覧）が開く</li><li>スマートフォン（幅375前後）で、注記が左寄せで読める</li><li>購入の操作が今と同じく動く：サイズを選ぶと価格が変わる、カートに追加できる、オプション（引取り・エントリーの返金保証オプションなど）の欄が出る、レビューの星と件数が出る（複製したテーマのプレビューで。注文は確定しない）</li><li>公開したあと：公開中のページ（<a href="https://limne.jp/products/mattress-rich">https://limne.jp/products/mattress-rich</a> 、<a href="https://limne.jp/products/mattress-entry">https://limne.jp/products/mattress-entry</a> ）で、上の項目をもう一度確かめる。画像の代替テキストは、ページのソースで確かめる</li></ul>
+<h2 id="h-cec79bf1">7. この一式に入れていないもの</h2>
+<ul><li>リッチコイルの画像の文字の差し替え（ギャラリー3枚目・1段目の図・LPの画像。確認タブ4章の1）：画像が決まってから差し替えます。それまで画像は今のまま</li><li>商品タイトル・meta description：公開中の文のまま（このページの変更には含めていません）</li><li>レビュー欄（Judge.me）の表示：今のまま</li><li>エントリー：確認タブの9か所を含め、条件の書き方とページに足す文以外は、文・見出し・並び順とも今のまま</li><li>エントリーの商品説明（管理画面の商品の「説明」。検索エンジン向けの商品情報にも使われる）に、今の仕様（コイルスプリング）と違う「本体：オリジナルウレタンフォーム」などの文が残っています。今回の変更には含めていません（別途ご相談します）</li></ul>
+<h2 id="files">8. ファイルの中身（コピー用）</h2>
+<p>どのファイルも、下の「コピー」でクリップボードに入ります。本文の欄（太字・リンクの付けられる欄）に貼るものは「表示どおりにコピー」を使うと、段落・太字・リンクがそのまま入ります。一式は <a href="limne-pdp-shopify.zip">limne-pdp-shopify.zip</a> でもダウンロードできます（フォルダの名前は手順書と同じ）。</p>
+<h3>スニペット（snippets に新しく作る）</h3>
+<div class="file"><h4><span>shopify/snippets/limne-pdp-icons.liquid</span><button class="copy" data-t="c1" data-label="コピー">コピー</button></h4><div class="body"><pre id="c1">{%- comment -%}
+  購入欄のアイコン（保証・分割・送料）と、その下の保証の注記。
+  今の購入欄のアイコンのHTML（class=&quot;text-with-icons__blocks&quot; で始まる部分）を、{% render &#x27;limne-pdp-icons&#x27; %} に置き換える。
+  リッチコイル・エントリーの商品テンプレートだけで使う（ほかの商品では何も出さない）。
+{%- endcomment -%}
+&lt;style&gt;
+.limne-pdp-lead p{margin:0 0 12px;font-size:15px;line-height:1.8}
+.limne-pdp-notes{margin:12px 0 0;text-align:left}
+.limne-pdp-notes p{margin:0 0 6px;font-size:13px;line-height:1.7;text-align:left}
+&lt;/style&gt;
+{%- case product.handle -%}
+  {%- when &#x27;mattress-rich&#x27; -%}
+&lt;div class=&quot;text-with-icons__blocks has-4-per-row has-2-per-row-sp flex_sp&quot;&gt;
+&lt;div class=&quot;text-with-icons__block text-center&quot;&gt;
+&lt;div class=&quot;text-with-icons__block-icon&quot;&gt;
+&lt;div class=&quot;custom_icon&quot;&gt;
+&lt;img alt=&quot;&quot; src=&quot;https://cdn.shopify.com/s/files/1/0434/3758/8643/files/120days.svg?v=1733121368&quot;/&gt;
+&lt;/div&gt;
+&lt;/div&gt;&lt;div class=&quot;text-with-icons__block-text&quot;&gt;
+&lt;p&gt;120日間完全返金保証&lt;/p&gt;
+&lt;/div&gt;
+&lt;/div&gt;
+&lt;div class=&quot;text-with-icons__block text-center&quot;&gt;
+&lt;div class=&quot;text-with-icons__block-icon&quot;&gt;
+&lt;div class=&quot;custom_icon&quot;&gt;
+&lt;img alt=&quot;&quot; src=&quot;https://cdn.shopify.com/s/files/1/0434/3758/8643/files/10years.svg?v=1733121368&quot;/&gt;
+&lt;/div&gt;
+&lt;/div&gt;&lt;div class=&quot;text-with-icons__block-text&quot;&gt;
+&lt;p&gt;10年品質保証&lt;/p&gt;
+&lt;/div&gt;
+&lt;/div&gt;
+&lt;div class=&quot;text-with-icons__block text-center&quot;&gt;
+&lt;div class=&quot;text-with-icons__block-icon&quot;&gt;
+&lt;div class=&quot;custom_icon&quot;&gt;
+&lt;img alt=&quot;&quot; src=&quot;https://cdn.shopify.com/s/files/1/0434/3758/8643/files/mukinri.png?v=1733225352&quot;/&gt;
+&lt;/div&gt;
+&lt;/div&gt;&lt;div class=&quot;text-with-icons__block-text&quot;&gt;
+&lt;p&gt;月々3000円～無金利分割支払い&lt;/p&gt;
+&lt;/div&gt;
+&lt;/div&gt;
+&lt;div class=&quot;text-with-icons__block text-center&quot;&gt;
+&lt;div class=&quot;text-with-icons__block-icon&quot;&gt;
+&lt;div class=&quot;custom_icon&quot;&gt;
+&lt;img alt=&quot;&quot; src=&quot;https://cdn.shopify.com/s/files/1/0434/3758/8643/files/delivery0.svg?v=1733121368&quot;/&gt;
+&lt;/div&gt;
+&lt;/div&gt;&lt;div class=&quot;text-with-icons__block-text&quot;&gt;
+&lt;p&gt;全品送料無料（沖縄、一部地域を除く）&lt;/p&gt;
+&lt;/div&gt;
+&lt;/div&gt;
+&lt;/div&gt;&lt;div class=&quot;limne-pdp-notes&quot;&gt;&lt;p&gt;※120日間完全返金保証：無金利分割決済でご購入の場合は30日間です。ご返金はマットレス本体金額のみ。公式サイトでご購入の方に限り1度だけ、所定の最低利用期間などの条件があります。&lt;/p&gt;&lt;p&gt;※10年品質保証：適正にご使用いただいたにもかかわらず3.0cm以上のへこみが確認された場合に、無償で交換等を行います。マットレスカバーや生地の経年劣化などは対象外です。&lt;/p&gt;&lt;p&gt;条件の詳細は&lt;a href=&quot;https://limne.jp/pages/shopping_guide#8&quot; title=&quot;ショッピングガイド&quot;&gt;ショッピングガイド&lt;/a&gt;をご確認ください。&lt;/p&gt;&lt;/div&gt;
+  {%- when &#x27;mattress-entry&#x27; -%}
+&lt;div class=&quot;text-with-icons__blocks has-4-per-row has-2-per-row-sp flex_sp&quot;&gt;
+&lt;!-- &lt;div class=&quot;text-with-icons__block text-center&quot;&gt;
+    &lt;div class=&quot;text-with-icons__block-icon&quot;&gt;
+      
+        &lt;div class=&quot;custom_icon&quot;&gt;
+          &lt;img src=&quot;https://cdn.shopify.com/s/files/1/0434/3758/8643/files/120days.svg?v=1733121368&quot;&gt;
+        &lt;/div&gt;
+      
+    &lt;/div&gt;&lt;div class=&quot;text-with-icons__block-text&quot;&gt;
+      &lt;p&gt;120日間完全返金保証&lt;/p&gt;
+    &lt;/div&gt;
+  &lt;/div&gt;--&gt;
+&lt;div class=&quot;text-with-icons__block text-center&quot;&gt;
+&lt;div class=&quot;text-with-icons__block-icon&quot;&gt;
+&lt;div class=&quot;custom_icon&quot;&gt;
+&lt;img alt=&quot;&quot; src=&quot;https://cdn.shopify.com/s/files/1/0434/3758/8643/files/10years.svg?v=1733121368&quot;/&gt;
+&lt;/div&gt;
+&lt;/div&gt;&lt;div class=&quot;text-with-icons__block-text&quot;&gt;
+&lt;p&gt;10年品質保証&lt;/p&gt;
+&lt;/div&gt;
+&lt;/div&gt;
+&lt;div class=&quot;text-with-icons__block text-center&quot;&gt;
+&lt;div class=&quot;text-with-icons__block-icon&quot;&gt;
+&lt;div class=&quot;custom_icon&quot;&gt;
+&lt;img alt=&quot;&quot; src=&quot;https://cdn.shopify.com/s/files/1/0434/3758/8643/files/mukinri.png?v=1733225352&quot;/&gt;
+&lt;/div&gt;
+&lt;/div&gt;&lt;div class=&quot;text-with-icons__block-text&quot;&gt;
+&lt;p&gt;月々3000円～無金利分割支払い&lt;/p&gt;
+&lt;/div&gt;
+&lt;/div&gt;
+&lt;div class=&quot;text-with-icons__block text-center&quot;&gt;
+&lt;div class=&quot;text-with-icons__block-icon&quot;&gt;
+&lt;div class=&quot;custom_icon&quot;&gt;
+&lt;img alt=&quot;&quot; src=&quot;https://cdn.shopify.com/s/files/1/0434/3758/8643/files/delivery0.svg?v=1733121368&quot;/&gt;
+&lt;/div&gt;
+&lt;/div&gt;&lt;div class=&quot;text-with-icons__block-text&quot;&gt;
+&lt;p&gt;全品送料無料（沖縄、一部地域を除く）&lt;/p&gt;
+&lt;/div&gt;
+&lt;/div&gt;
+&lt;/div&gt;&lt;div class=&quot;limne-pdp-notes&quot;&gt;&lt;p&gt;※10年品質保証：適正にご使用いただいたにもかかわらず3.0cm以上のへこみが確認された場合に、無償で交換等を行います。マットレスカバーや生地の経年劣化などは対象外です。&lt;/p&gt;&lt;p&gt;条件の詳細は&lt;a href=&quot;https://limne.jp/pages/shopping_guide#8&quot; title=&quot;ショッピングガイド&quot;&gt;ショッピングガイド&lt;/a&gt;をご確認ください。&lt;/p&gt;&lt;/div&gt;
+{%- endcase -%}
+</pre></div></div>
+<div class="file"><h4><span>shopify/snippets/limne-pdp-lead.liquid</span><button class="copy" data-t="c2" data-label="コピー">コピー</button></h4><div class="body"><pre id="c2">{%- comment -%}
+  商品名の下の要点（リッチコイル）。商品ページの「カスタムLiquid」ブロックで {% render &#x27;limne-pdp-lead&#x27; %} と書き、ブロックの並びのいちばん上（レビューの星の上）に置く。
+  ほかの商品では何も出さない。
+{%- endcomment -%}
+{%- case product.handle -%}
+  {%- when &#x27;mattress-rich&#x27; -%}
+&lt;style&gt;.limne-pdp-lead p{margin:0 0 12px;font-size:15px;line-height:1.8}&lt;/style&gt;
+&lt;div class=&quot;limne-pdp-lead&quot;&gt;&lt;p&gt;上下二層のポケットコイルで身体を受け止め、沈み込みすぎを防ぐ設計です。包み込まれるような柔らかさと、しっかり支える反発力の両立を目指しました。&lt;/p&gt;&lt;/div&gt;
+{%- endcase -%}
+</pre></div></div>
+<h3>そのまま入れるコード（スニペットを使わない場合）</h3>
+<div class="file"><h4><span>shopify/code/mattress-entry/icons_block.html</span><button class="copy" data-t="c3" data-label="コピー">コピー</button></h4><div class="body"><pre id="c3">&lt;style&gt;
+.limne-pdp-lead p{margin:0 0 12px;font-size:15px;line-height:1.8}
+.limne-pdp-notes{margin:12px 0 0;text-align:left}
+.limne-pdp-notes p{margin:0 0 6px;font-size:13px;line-height:1.7;text-align:left}
+&lt;/style&gt;
+&lt;div class=&quot;text-with-icons__blocks has-4-per-row has-2-per-row-sp flex_sp&quot;&gt;
+&lt;!-- &lt;div class=&quot;text-with-icons__block text-center&quot;&gt;
+    &lt;div class=&quot;text-with-icons__block-icon&quot;&gt;
+      
+        &lt;div class=&quot;custom_icon&quot;&gt;
+          &lt;img src=&quot;https://cdn.shopify.com/s/files/1/0434/3758/8643/files/120days.svg?v=1733121368&quot;&gt;
+        &lt;/div&gt;
+      
+    &lt;/div&gt;&lt;div class=&quot;text-with-icons__block-text&quot;&gt;
+      &lt;p&gt;120日間完全返金保証&lt;/p&gt;
+    &lt;/div&gt;
+  &lt;/div&gt;--&gt;
+&lt;div class=&quot;text-with-icons__block text-center&quot;&gt;
+&lt;div class=&quot;text-with-icons__block-icon&quot;&gt;
+&lt;div class=&quot;custom_icon&quot;&gt;
+&lt;img alt=&quot;&quot; src=&quot;https://cdn.shopify.com/s/files/1/0434/3758/8643/files/10years.svg?v=1733121368&quot;/&gt;
+&lt;/div&gt;
+&lt;/div&gt;&lt;div class=&quot;text-with-icons__block-text&quot;&gt;
+&lt;p&gt;10年品質保証&lt;/p&gt;
+&lt;/div&gt;
+&lt;/div&gt;
+&lt;div class=&quot;text-with-icons__block text-center&quot;&gt;
+&lt;div class=&quot;text-with-icons__block-icon&quot;&gt;
+&lt;div class=&quot;custom_icon&quot;&gt;
+&lt;img alt=&quot;&quot; src=&quot;https://cdn.shopify.com/s/files/1/0434/3758/8643/files/mukinri.png?v=1733225352&quot;/&gt;
+&lt;/div&gt;
+&lt;/div&gt;&lt;div class=&quot;text-with-icons__block-text&quot;&gt;
+&lt;p&gt;月々3000円～無金利分割支払い&lt;/p&gt;
+&lt;/div&gt;
+&lt;/div&gt;
+&lt;div class=&quot;text-with-icons__block text-center&quot;&gt;
+&lt;div class=&quot;text-with-icons__block-icon&quot;&gt;
+&lt;div class=&quot;custom_icon&quot;&gt;
+&lt;img alt=&quot;&quot; src=&quot;https://cdn.shopify.com/s/files/1/0434/3758/8643/files/delivery0.svg?v=1733121368&quot;/&gt;
+&lt;/div&gt;
+&lt;/div&gt;&lt;div class=&quot;text-with-icons__block-text&quot;&gt;
+&lt;p&gt;全品送料無料（沖縄、一部地域を除く）&lt;/p&gt;
+&lt;/div&gt;
+&lt;/div&gt;
+&lt;/div&gt;&lt;div class=&quot;limne-pdp-notes&quot;&gt;&lt;p&gt;※10年品質保証：適正にご使用いただいたにもかかわらず3.0cm以上のへこみが確認された場合に、無償で交換等を行います。マットレスカバーや生地の経年劣化などは対象外です。&lt;/p&gt;&lt;p&gt;条件の詳細は&lt;a href=&quot;https://limne.jp/pages/shopping_guide#8&quot; title=&quot;ショッピングガイド&quot;&gt;ショッピングガイド&lt;/a&gt;をご確認ください。&lt;/p&gt;&lt;/div&gt;
+</pre></div></div>
+<div class="file"><h4><span>shopify/code/mattress-rich/icons_block.html</span><button class="copy" data-t="c4" data-label="コピー">コピー</button></h4><div class="body"><pre id="c4">&lt;style&gt;
+.limne-pdp-lead p{margin:0 0 12px;font-size:15px;line-height:1.8}
+.limne-pdp-notes{margin:12px 0 0;text-align:left}
+.limne-pdp-notes p{margin:0 0 6px;font-size:13px;line-height:1.7;text-align:left}
+&lt;/style&gt;
+&lt;div class=&quot;text-with-icons__blocks has-4-per-row has-2-per-row-sp flex_sp&quot;&gt;
+&lt;div class=&quot;text-with-icons__block text-center&quot;&gt;
+&lt;div class=&quot;text-with-icons__block-icon&quot;&gt;
+&lt;div class=&quot;custom_icon&quot;&gt;
+&lt;img alt=&quot;&quot; src=&quot;https://cdn.shopify.com/s/files/1/0434/3758/8643/files/120days.svg?v=1733121368&quot;/&gt;
+&lt;/div&gt;
+&lt;/div&gt;&lt;div class=&quot;text-with-icons__block-text&quot;&gt;
+&lt;p&gt;120日間完全返金保証&lt;/p&gt;
+&lt;/div&gt;
+&lt;/div&gt;
+&lt;div class=&quot;text-with-icons__block text-center&quot;&gt;
+&lt;div class=&quot;text-with-icons__block-icon&quot;&gt;
+&lt;div class=&quot;custom_icon&quot;&gt;
+&lt;img alt=&quot;&quot; src=&quot;https://cdn.shopify.com/s/files/1/0434/3758/8643/files/10years.svg?v=1733121368&quot;/&gt;
+&lt;/div&gt;
+&lt;/div&gt;&lt;div class=&quot;text-with-icons__block-text&quot;&gt;
+&lt;p&gt;10年品質保証&lt;/p&gt;
+&lt;/div&gt;
+&lt;/div&gt;
+&lt;div class=&quot;text-with-icons__block text-center&quot;&gt;
+&lt;div class=&quot;text-with-icons__block-icon&quot;&gt;
+&lt;div class=&quot;custom_icon&quot;&gt;
+&lt;img alt=&quot;&quot; src=&quot;https://cdn.shopify.com/s/files/1/0434/3758/8643/files/mukinri.png?v=1733225352&quot;/&gt;
+&lt;/div&gt;
+&lt;/div&gt;&lt;div class=&quot;text-with-icons__block-text&quot;&gt;
+&lt;p&gt;月々3000円～無金利分割支払い&lt;/p&gt;
+&lt;/div&gt;
+&lt;/div&gt;
+&lt;div class=&quot;text-with-icons__block text-center&quot;&gt;
+&lt;div class=&quot;text-with-icons__block-icon&quot;&gt;
+&lt;div class=&quot;custom_icon&quot;&gt;
+&lt;img alt=&quot;&quot; src=&quot;https://cdn.shopify.com/s/files/1/0434/3758/8643/files/delivery0.svg?v=1733121368&quot;/&gt;
+&lt;/div&gt;
+&lt;/div&gt;&lt;div class=&quot;text-with-icons__block-text&quot;&gt;
+&lt;p&gt;全品送料無料（沖縄、一部地域を除く）&lt;/p&gt;
+&lt;/div&gt;
+&lt;/div&gt;
+&lt;/div&gt;&lt;div class=&quot;limne-pdp-notes&quot;&gt;&lt;p&gt;※120日間完全返金保証：無金利分割決済でご購入の場合は30日間です。ご返金はマットレス本体金額のみ。公式サイトでご購入の方に限り1度だけ、所定の最低利用期間などの条件があります。&lt;/p&gt;&lt;p&gt;※10年品質保証：適正にご使用いただいたにもかかわらず3.0cm以上のへこみが確認された場合に、無償で交換等を行います。マットレスカバーや生地の経年劣化などは対象外です。&lt;/p&gt;&lt;p&gt;条件の詳細は&lt;a href=&quot;https://limne.jp/pages/shopping_guide#8&quot; title=&quot;ショッピングガイド&quot;&gt;ショッピングガイド&lt;/a&gt;をご確認ください。&lt;/p&gt;&lt;/div&gt;
+</pre></div></div>
+<div class="file"><h4><span>shopify/code/mattress-rich/lead_block.html</span><button class="copy" data-t="c5" data-label="コピー">コピー</button></h4><div class="body"><pre id="c5">&lt;style&gt;.limne-pdp-lead p{margin:0 0 12px;font-size:15px;line-height:1.8}&lt;/style&gt;
+&lt;div class=&quot;limne-pdp-lead&quot;&gt;&lt;p&gt;上下二層のポケットコイルで身体を受け止め、沈み込みすぎを防ぐ設計です。包み込まれるような柔らかさと、しっかり支える反発力の両立を目指しました。&lt;/p&gt;&lt;/div&gt;
+</pre></div></div>
+<div class="file"><h4><span>shopify/code/mattress-rich/long_banner_block.html</span><button class="copy" data-t="c6" data-label="コピー">コピー</button></h4><div class="body"><pre id="c6">&lt;a href=&quot;https://limne.jp/products/mattress-rich-coil-long&quot; target=&quot;_blank&quot;&gt;&lt;img alt=&quot;リッチコイルモデルの210cmロングサイズを見る&quot; src=&quot;https://cdn.shopify.com/s/files/1/0434/3758/8643/files/210cm.png?v=1790238273&quot;/&gt;&lt;/a&gt;
+</pre></div></div>
+<h3>貼り付け用（テーマエディタの本文・回答の欄）</h3>
+<div class="file"><h4><span>shopify/paste/mattress-entry/01_text_and_image_nahTyE.html<br><span class="lab">エントリー：段3「あんしんの耐久性と返金保証」／本文（テキスト）</span></span><span><button class="copy" data-t="r7" data-mode="rich" data-label="表示どおりにコピー">表示どおりにコピー</button> <button class="copy" data-t="c7" data-label="HTMLをコピー">HTMLをコピー</button></span></h4><div class="body"><div class="preview" id="r7"><p>エントリーモデルは、10万回の耐久試験を実施し、クリアしています。耐久試験の回数と条件はモデルごとに異なります。耐用年数を保証するものではありません。</p><p>10年間の品質保証は標準で付帯します。120日間完全返金保証は、ご購入時に有償オプション（10,000円・税込）をお申し込みいただいた場合の対象になります。無金利分割決済でご購入の場合、120日間完全返金保証の期間は30日間になります。完全返金保証には、所定の最低利用期間などの適用条件があります。詳細は<a href="https://limne.jp/pages/shopping_guide#8" title="ショッピングガイド">ショッピングガイド</a>をご確認ください。</p><p>※10年品質保証：適正にご使用いただいたにもかかわらず3.0cm以上のへこみが確認された場合に、無償で交換等を行います。マットレスカバーや生地の経年劣化などは対象外です。</p><p>※120日間完全返金保証：ご返金はマットレス本体金額のみとなります（有償オプション料金は返金対象外です）。公式サイトでご購入の方に限り、1度だけご利用いただけます。ご返品のお申し込みの前に所定の最低利用期間があります。</p></div><pre id="c7">&lt;p&gt;エントリーモデルは、10万回の耐久試験を実施し、クリアしています。耐久試験の回数と条件はモデルごとに異なります。耐用年数を保証するものではありません。&lt;/p&gt;&lt;p&gt;10年間の品質保証は標準で付帯します。120日間完全返金保証は、ご購入時に有償オプション（10,000円・税込）をお申し込みいただいた場合の対象になります。無金利分割決済でご購入の場合、120日間完全返金保証の期間は30日間になります。完全返金保証には、所定の最低利用期間などの適用条件があります。詳細は&lt;a href=&quot;https://limne.jp/pages/shopping_guide#8&quot; title=&quot;ショッピングガイド&quot;&gt;ショッピングガイド&lt;/a&gt;をご確認ください。&lt;/p&gt;&lt;p&gt;※10年品質保証：適正にご使用いただいたにもかかわらず3.0cm以上のへこみが確認された場合に、無償で交換等を行います。マットレスカバーや生地の経年劣化などは対象外です。&lt;/p&gt;&lt;p&gt;※120日間完全返金保証：ご返金はマットレス本体金額のみとなります（有償オプション料金は返金対象外です）。公式サイトでご購入の方に限り、1度だけご利用いただけます。ご返品のお申し込みの前に所定の最低利用期間があります。&lt;/p&gt;</pre></div></div>
+<div class="file"><h4><span>shopify/paste/mattress-entry/02_text_and_image_ERVLhk.html<br><span class="lab">エントリー：段2「優れた体圧分散性」（見出し・本文は現行のまま）／本文（テキスト）</span></span><span><button class="copy" data-t="r8" data-mode="rich" data-label="表示どおりにコピー">表示どおりにコピー</button> <button class="copy" data-t="c8" data-label="HTMLをコピー">HTMLをコピー</button></span></h4><div class="body"><div class="preview" id="r8"><p>リムネの最注力領域の一つである「体圧分散性」。</p><p>首や肩、腰など、特定の箇所の痛みに悩む方にぜひ知ってもらいたい強みです。580個のコイルが身体の凹凸に合わせて圧力を分散します。</p><p>優れた体圧分散性はコイル数だけでは実現せず、Limneは配列と径の太さにこだわっており、生卵を上から押し込んでも割れない圧力分散性を実現しています。</p><p>3つの要素の図です。コイルの配列、径の太さ・かたさ、コイル数を設計の要素にしています。</p></div><pre id="c8">&lt;p&gt;リムネの最注力領域の一つである「体圧分散性」。&lt;/p&gt;&lt;p&gt;首や肩、腰など、特定の箇所の痛みに悩む方にぜひ知ってもらいたい強みです。580個のコイルが身体の凹凸に合わせて圧力を分散します。&lt;/p&gt;&lt;p&gt;優れた体圧分散性はコイル数だけでは実現せず、Limneは配列と径の太さにこだわっており、生卵を上から押し込んでも割れない圧力分散性を実現しています。&lt;/p&gt;&lt;p&gt;3つの要素の図です。コイルの配列、径の太さ・かたさ、コイル数を設計の要素にしています。&lt;/p&gt;</pre></div></div>
+<div class="file"><h4><span>shopify/paste/mattress-entry/03_text_and_image_nLyx9d.html<br><span class="lab">エントリー：段4「日本人にあった設計」（見出し・本文は現行のまま）／本文（テキスト）</span></span><span><button class="copy" data-t="r9" data-mode="rich" data-label="表示どおりにコピー">表示どおりにコピー</button> <button class="copy" data-t="c9" data-label="HTMLをコピー">HTMLをコピー</button></span></h4><div class="body"><div class="preview" id="r9"><p>日本企画のコイルマットレスで、リムネらしい寝心地の良さとしっかりしたコイルの支えのバランスを目指したモデル。</p><p>硬く押し返すのではなく、ミルキーコイルの弾力で綺麗な寝姿勢を翌朝までキープ。朝起きた時のスッキリをサポートします。</p><p>11層構造の分解図です。7層目がミルキーコイルです。</p></div><pre id="c9">&lt;p&gt;日本企画のコイルマットレスで、リムネらしい寝心地の良さとしっかりしたコイルの支えのバランスを目指したモデル。&lt;/p&gt;&lt;p&gt;硬く押し返すのではなく、ミルキーコイルの弾力で綺麗な寝姿勢を翌朝までキープ。朝起きた時のスッキリをサポートします。&lt;/p&gt;&lt;p&gt;11層構造の分解図です。7層目がミルキーコイルです。&lt;/p&gt;</pre></div></div>
+<div class="file"><h4><span>shopify/paste/mattress-entry/04_blocks_a8pAet.html<br><span class="lab">エントリー：よくあるご質問／回答（Q.耐久性が心配です。）</span></span><span><button class="copy" data-t="r10" data-mode="rich" data-label="表示どおりにコピー">表示どおりにコピー</button> <button class="copy" data-t="c10" data-label="HTMLをコピー">HTMLをコピー</button></span></h4><div class="body"><div class="preview" id="r10"><p>A.エントリーモデルは、10万回の耐久試験を実施し、クリアしています。耐久試験の回数と条件はモデルごとに異なります。耐用年数を保証するものではありません。</p></div><pre id="c10">&lt;p&gt;A.エントリーモデルは、10万回の耐久試験を実施し、クリアしています。耐久試験の回数と条件はモデルごとに異なります。耐用年数を保証するものではありません。&lt;/p&gt;</pre></div></div>
+<div class="file"><h4><span>shopify/paste/mattress-entry/05_blocks_a8pAet.html<br><span class="lab">エントリー：よくあるご質問／回答（Q.返金保証はありますか？）</span></span><span><button class="copy" data-t="r11" data-mode="rich" data-label="表示どおりにコピー">表示どおりにコピー</button> <button class="copy" data-t="c11" data-label="HTMLをコピー">HTMLをコピー</button></span></h4><div class="body"><div class="preview" id="r11"><p>A.エントリーモデルは、ご購入時に有償の保証オプション（10,000円・税込）をあわせてお申し込みいただいた場合に、120日間完全返金保証の対象となります。オプションを購入後に追加することはできません。<br/>ご返金はマットレス本体金額のみとなります（有償オプション料金は返金対象外です）。無金利分割決済でご購入の場合は、保証期間が30日間になります。ご利用にあたっては条件があります。詳しい条件は<a href="https://limne.jp/pages/shopping_guide#8" title="ショッピングガイド">ショッピングガイド</a>をご確認ください。</p><p>公式サイトでご購入の方に限り、1度だけご利用いただけます。ご返品のお申し込みの前に所定の最低利用期間があります。不要マットレス引き取りサービス（37,000円・税込）をあわせてご利用の場合、そのサービス料は返金対象外です。</p></div><pre id="c11">&lt;p&gt;A.エントリーモデルは、ご購入時に有償の保証オプション（10,000円・税込）をあわせてお申し込みいただいた場合に、120日間完全返金保証の対象となります。オプションを購入後に追加することはできません。&lt;br/&gt;ご返金はマットレス本体金額のみとなります（有償オプション料金は返金対象外です）。無金利分割決済でご購入の場合は、保証期間が30日間になります。ご利用にあたっては条件があります。詳しい条件は&lt;a href=&quot;https://limne.jp/pages/shopping_guide#8&quot; title=&quot;ショッピングガイド&quot;&gt;ショッピングガイド&lt;/a&gt;をご確認ください。&lt;/p&gt;&lt;p&gt;公式サイトでご購入の方に限り、1度だけご利用いただけます。ご返品のお申し込みの前に所定の最低利用期間があります。不要マットレス引き取りサービス（37,000円・税込）をあわせてご利用の場合、そのサービス料は返金対象外です。&lt;/p&gt;</pre></div></div>
+<div class="file"><h4><span>shopify/paste/mattress-entry/closing_section_text.html<br><span class="lab">エントリー：段の下の文</span></span><span><button class="copy" data-t="r12" data-mode="rich" data-label="表示どおりにコピー">表示どおりにコピー</button> <button class="copy" data-t="c12" data-label="HTMLをコピー">HTMLをコピー</button></span></h4><div class="body"><div class="preview" id="r12"><p>エントリーモデルは、寝返りのしやすさや通気に配慮したミルキーコイルの構造設計で、睡眠環境づくりに取り組む「構造設計型」のリカバリーマットレスです。</p><p>LIMNEの現行マットレスは、特定の効果をうたうものではありません。</p><p>※LIMNEのマットレスは医療機器ではありません。不眠症をはじめとする疾患の治療を目的とした製品ではありません。</p><p><a href="https://limne.jp/pages/limne-recovery-mattress" title="構造設計型とは？3つの型の違いと選び方">構造設計型とは？3つの型の違いと選び方</a></p><p>ほかのモデルとの違いは、<a href="https://limne.jp/collections/mattress" title="マットレス一覧">マットレス一覧</a>でご確認いただけます。</p></div><pre id="c12">&lt;p&gt;エントリーモデルは、寝返りのしやすさや通気に配慮したミルキーコイルの構造設計で、睡眠環境づくりに取り組む「構造設計型」のリカバリーマットレスです。&lt;/p&gt;&lt;p&gt;LIMNEの現行マットレスは、特定の効果をうたうものではありません。&lt;/p&gt;&lt;p&gt;※LIMNEのマットレスは医療機器ではありません。不眠症をはじめとする疾患の治療を目的とした製品ではありません。&lt;/p&gt;&lt;p&gt;&lt;a href=&quot;https://limne.jp/pages/limne-recovery-mattress&quot; title=&quot;構造設計型とは？3つの型の違いと選び方&quot;&gt;構造設計型とは？3つの型の違いと選び方&lt;/a&gt;&lt;/p&gt;&lt;p&gt;ほかのモデルとの違いは、&lt;a href=&quot;https://limne.jp/collections/mattress&quot; title=&quot;マットレス一覧&quot;&gt;マットレス一覧&lt;/a&gt;でご確認いただけます。&lt;/p&gt;</pre></div></div>
+<div class="file"><h4><span>shopify/paste/mattress-rich/01_rich_text_i7Uicw.html<br><span class="lab">リッチコイル：「選ばれる理由」の導入（リッチテキスト）／本文（テキスト）</span></span><span><button class="copy" data-t="r13" data-mode="rich" data-label="表示どおりにコピー">表示どおりにコピー</button> <button class="copy" data-t="c13" data-label="HTMLをコピー">HTMLをコピー</button></span></h4><div class="body"><div class="preview" id="r13"><p>リムネは、心地よいリカバリー体験を睡眠環境から探求するマットレスブランドです。</p><p>リッチコイルモデルは、コイルを上下二層に重ねた「ツインリカバリー構造」で、寝返りがうちやすい設計です。表面側（コイルの上）には、卵もつぶれない程の圧力の分散を実現する層があります。かたすぎず、柔らかすぎない適度な反発力で、体圧が肩・腰に集中しすぎないように支えるマットレスです。</p></div><pre id="c13">&lt;p&gt;リムネは、心地よいリカバリー体験を睡眠環境から探求するマットレスブランドです。&lt;/p&gt;&lt;p&gt;リッチコイルモデルは、コイルを上下二層に重ねた「ツインリカバリー構造」で、寝返りがうちやすい設計です。表面側（コイルの上）には、卵もつぶれない程の圧力の分散を実現する層があります。かたすぎず、柔らかすぎない適度な反発力で、体圧が肩・腰に集中しすぎないように支えるマットレスです。&lt;/p&gt;</pre></div></div>
+<div class="file"><h4><span>shopify/paste/mattress-rich/02_text_and_image_VAnVNP.html<br><span class="lab">リッチコイル：旧1段目「5つ星ホテルを「超える」寝心地」／本文（テキスト）</span></span><span><button class="copy" data-t="r14" data-mode="rich" data-label="表示どおりにコピー">表示どおりにコピー</button> <button class="copy" data-t="c14" data-label="HTMLをコピー">HTMLをコピー</button></span></h4><div class="body"><div class="preview" id="r14"><p>※5つ星ホテルで使用されているコイル数の約2倍以上、キングサイズ1,714個を使用</p><p>100万円を超えるマットレスでも使用される、コイルを二層重ねる構造を採用し、寝返りがうちやすい設計です。</p><p>Limneモデル唯一の「ツインリカバリー構造」を採用。加えて、業界最多クラスの1,714個のコイル数を使用。※キングサイズ</p><p>青山学院大学および脳波研究の専門家との実験にも取り組んでおり、睡眠環境に関わる寝心地・体圧分散・寝姿勢を科学的視点で追求しています。この共同研究は試作品の比較検証であり、現在販売中の3モデルの性能を評価したものではありません。</p><p>二層ポケットコイルの構造図。コイルを上下二層に重ねた「ツインリカバリー構造」で、厚さは25cm、コイル数は1,714個（キングサイズ）です。</p></div><pre id="c14">&lt;p&gt;※5つ星ホテルで使用されているコイル数の約2倍以上、キングサイズ1,714個を使用&lt;/p&gt;&lt;p&gt;100万円を超えるマットレスでも使用される、コイルを二層重ねる構造を採用し、寝返りがうちやすい設計です。&lt;/p&gt;&lt;p&gt;Limneモデル唯一の「ツインリカバリー構造」を採用。加えて、業界最多クラスの1,714個のコイル数を使用。※キングサイズ&lt;/p&gt;&lt;p&gt;青山学院大学および脳波研究の専門家との実験にも取り組んでおり、睡眠環境に関わる寝心地・体圧分散・寝姿勢を科学的視点で追求しています。この共同研究は試作品の比較検証であり、現在販売中の3モデルの性能を評価したものではありません。&lt;/p&gt;&lt;p&gt;二層ポケットコイルの構造図。コイルを上下二層に重ねた「ツインリカバリー構造」で、厚さは25cm、コイル数は1,714個（キングサイズ）です。&lt;/p&gt;</pre></div></div>
+<div class="file"><h4><span>shopify/paste/mattress-rich/03_text_and_image_4QKGxt.html<br><span class="lab">リッチコイル：旧2段目「日本企画の二層ポケットコイルモデル」／本文（テキスト）</span></span><span><button class="copy" data-t="r15" data-mode="rich" data-label="表示どおりにコピー">表示どおりにコピー</button> <button class="copy" data-t="c15" data-label="HTMLをコピー">HTMLをコピー</button></span></h4><div class="body"><div class="preview" id="r15"><p>日本人の体型に合わせて設計した、日本企画の二層ポケットコイルです。しっかりと身体を支えながらも、包み込まれるような柔らかさと反発力の両立を目指した高密度二層コイルモデルです。</p></div><pre id="c15">&lt;p&gt;日本人の体型に合わせて設計した、日本企画の二層ポケットコイルです。しっかりと身体を支えながらも、包み込まれるような柔らかさと反発力の両立を目指した高密度二層コイルモデルです。&lt;/p&gt;</pre></div></div>
+<div class="file"><h4><span>shopify/paste/mattress-rich/04_text_and_image_nL9WnJ.html<br><span class="lab">リッチコイル：旧3段目「睡眠のプロが導き出す「超体圧分散」」／本文（テキスト）</span></span><span><button class="copy" data-t="r16" data-mode="rich" data-label="表示どおりにコピー">表示どおりにコピー</button> <button class="copy" data-t="c16" data-label="HTMLをコピー">HTMLをコピー</button></span></h4><div class="body"><div class="preview" id="r16"><p>25cm厚の高密度ポケットコイルと上下二層の「ツインリカバリー構造」により、体圧を面で分散し、身体の凹凸にも細かくフィットする設計です。</p><p>上層で身体を受け止め、下層で沈み込みすぎを防ぐため、腰が落ち込みにくく安定した寝姿勢を保ちやすいのが特徴です。</p><p>リムネマットレスシリーズの二層コイルモデルです。睡眠学会前理事の神山潤先生に、寝心地・体圧分散・寝姿勢の考え方について監修をいただいています。</p></div><pre id="c16">&lt;p&gt;25cm厚の高密度ポケットコイルと上下二層の「ツインリカバリー構造」により、体圧を面で分散し、身体の凹凸にも細かくフィットする設計です。&lt;/p&gt;&lt;p&gt;上層で身体を受け止め、下層で沈み込みすぎを防ぐため、腰が落ち込みにくく安定した寝姿勢を保ちやすいのが特徴です。&lt;/p&gt;&lt;p&gt;リムネマットレスシリーズの二層コイルモデルです。睡眠学会前理事の神山潤先生に、寝心地・体圧分散・寝姿勢の考え方について監修をいただいています。&lt;/p&gt;</pre></div></div>
+<div class="file"><h4><span>shopify/paste/mattress-rich/05_text_and_image_WyJiP4.html<br><span class="lab">リッチコイル：旧5段目「通気性・衛生面に配慮」／本文（テキスト）</span></span><span><button class="copy" data-t="r17" data-mode="rich" data-label="表示どおりにコピー">表示どおりにコピー</button> <button class="copy" data-t="c17" data-label="HTMLをコピー">HTMLをコピー</button></span></h4><div class="body"><div class="preview" id="r17"><p>上下二層のポケットコイル構造により、マットレス内部に空気の通り道を確保した、通気に配慮した構造です。</p><p>さらに防ダニ・抗菌加工も施されているため、通気性と衛生面の両方に配慮したコイルマットレスです。</p></div><pre id="c17">&lt;p&gt;上下二層のポケットコイル構造により、マットレス内部に空気の通り道を確保した、通気に配慮した構造です。&lt;/p&gt;&lt;p&gt;さらに防ダニ・抗菌加工も施されているため、通気性と衛生面の両方に配慮したコイルマットレスです。&lt;/p&gt;</pre></div></div>
+<div class="file"><h4><span>shopify/paste/mattress-rich/06_text_and_image_r7Jg6N.html<br><span class="lab">リッチコイル：旧6段目「赤ちゃんや敏感肌の人にも優しい素材」（見出しと1つ目の段落は現行のまま）／本文（テキスト）</span></span><span><button class="copy" data-t="r18" data-mode="rich" data-label="表示どおりにコピー">表示どおりにコピー</button> <button class="copy" data-t="c18" data-label="HTMLをコピー">HTMLをコピー</button></span></h4><div class="body"><div class="preview" id="r18"><p>世界水準の認証、OEKO-TEX STANDARD 100とCertiPUR-US を取得</p><p><strong>重金属・ホルムアルデヒド:</strong> 鉛や水銀などの重金属、ホルムアルデヒドを含みません。</p><p><strong>低VOC（揮発性有機化合物）:</strong> 揮発性有機化合物の放散が少ない素材です。</p></div><pre id="c18">&lt;p&gt;世界水準の認証、OEKO-TEX STANDARD 100とCertiPUR-US を取得&lt;/p&gt;&lt;p&gt;&lt;strong&gt;重金属・ホルムアルデヒド:&lt;/strong&gt; 鉛や水銀などの重金属、ホルムアルデヒドを含みません。&lt;/p&gt;&lt;p&gt;&lt;strong&gt;低VOC（揮発性有機化合物）:&lt;/strong&gt; 揮発性有機化合物の放散が少ない素材です。&lt;/p&gt;</pre></div></div>
+<div class="file"><h4><span>shopify/paste/mattress-rich/07_text_and_image_kmxkQg.html<br><span class="lab">リッチコイル：旧7段目「20万回の耐久テストと完全返金保証」（見出しは現行のまま）／本文（テキスト）</span></span><span><button class="copy" data-t="r19" data-mode="rich" data-label="表示どおりにコピー">表示どおりにコピー</button> <button class="copy" data-t="c19" data-label="HTMLをコピー">HTMLをコピー</button></span></h4><div class="body"><div class="preview" id="r19"><p>リッチコイルモデルは、20万回の耐久試験を実施しています。※耐久試験の回数と条件はモデルごとに異なります。耐用年数を保証するものではありません。</p><p>ご自宅で使ってみて身体に合わないと感じた場合に、返品できる120日間完全返金保証を付帯しています。無金利分割決済でご購入の場合、120日間完全返金保証の期間は30日間になります。完全返金保証には、所定の最低利用期間などの適用条件があります。詳細は<a href="https://limne.jp/pages/shopping_guide#8" title="ショッピングガイド">ショッピングガイド</a>をご確認ください。</p><p>※公式サイトでご購入の方に限り、1度だけご利用いただけます。お申し込みの前に所定の最低利用期間があります。</p><p><strong>返品送料・事務手数料はかからず、ご返金はマットレス本体金額のみとなります。返品の際、再圧縮は不要です。</strong></p><p>返金保証の案内図。120日間完全返金保証には適用条件があり、無金利分割決済でご購入の場合は30日間になります。詳細は<a href="https://limne.jp/pages/shopping_guide#8" title="ショッピングガイド">ショッピングガイド</a>をご確認ください。</p></div><pre id="c19">&lt;p&gt;リッチコイルモデルは、20万回の耐久試験を実施しています。※耐久試験の回数と条件はモデルごとに異なります。耐用年数を保証するものではありません。&lt;/p&gt;&lt;p&gt;ご自宅で使ってみて身体に合わないと感じた場合に、返品できる120日間完全返金保証を付帯しています。無金利分割決済でご購入の場合、120日間完全返金保証の期間は30日間になります。完全返金保証には、所定の最低利用期間などの適用条件があります。詳細は&lt;a href=&quot;https://limne.jp/pages/shopping_guide#8&quot; title=&quot;ショッピングガイド&quot;&gt;ショッピングガイド&lt;/a&gt;をご確認ください。&lt;/p&gt;&lt;p&gt;※公式サイトでご購入の方に限り、1度だけご利用いただけます。お申し込みの前に所定の最低利用期間があります。&lt;/p&gt;&lt;p&gt;&lt;strong&gt;返品送料・事務手数料はかからず、ご返金はマットレス本体金額のみとなります。返品の際、再圧縮は不要です。&lt;/strong&gt;&lt;/p&gt;&lt;p&gt;返金保証の案内図。120日間完全返金保証には適用条件があり、無金利分割決済でご購入の場合は30日間になります。詳細は&lt;a href=&quot;https://limne.jp/pages/shopping_guide#8&quot; title=&quot;ショッピングガイド&quot;&gt;ショッピングガイド&lt;/a&gt;をご確認ください。&lt;/p&gt;</pre></div></div>
+<div class="file"><h4><span>shopify/paste/mattress-rich/08_blocks_L4fCDm.html<br><span class="lab">リッチコイル：よくあるご質問／回答（Q.120日間完全返金保証は、返品送料など 発生しますか？）</span></span><span><button class="copy" data-t="r20" data-mode="rich" data-label="表示どおりにコピー">表示どおりにコピー</button> <button class="copy" data-t="c20" data-label="HTMLをコピー">HTMLをコピー</button></span></h4><div class="body"><div class="preview" id="r20"><p>A.返品送料・事務手数料はかからず、ご返金はマットレス本体金額のみとなります。無金利分割決済でご購入の場合は、保証期間が30日間になります。ご利用にあたっては条件があります。詳しい条件は<a href="https://limne.jp/pages/shopping_guide#8" title="ショッピングガイド">ショッピングガイド</a>をご確認ください。</p><p>公式サイトでご購入の方に限り、1度だけご利用いただけます。お申し込みの前に所定の最低利用期間があります。不要マットレス引き取りサービス（37,000円・税込）をあわせてご利用の場合、そのサービス料は返金対象外です。</p></div><pre id="c20">&lt;p&gt;A.返品送料・事務手数料はかからず、ご返金はマットレス本体金額のみとなります。無金利分割決済でご購入の場合は、保証期間が30日間になります。ご利用にあたっては条件があります。詳しい条件は&lt;a href=&quot;https://limne.jp/pages/shopping_guide#8&quot; title=&quot;ショッピングガイド&quot;&gt;ショッピングガイド&lt;/a&gt;をご確認ください。&lt;/p&gt;&lt;p&gt;公式サイトでご購入の方に限り、1度だけご利用いただけます。お申し込みの前に所定の最低利用期間があります。不要マットレス引き取りサービス（37,000円・税込）をあわせてご利用の場合、そのサービス料は返金対象外です。&lt;/p&gt;</pre></div></div>
+<div class="file"><h4><span>shopify/paste/mattress-rich/09_blocks_L4fCDm.html<br><span class="lab">リッチコイル：よくあるご質問／回答（Q.耐久性が心配です。）</span></span><span><button class="copy" data-t="r21" data-mode="rich" data-label="表示どおりにコピー">表示どおりにコピー</button> <button class="copy" data-t="c21" data-label="HTMLをコピー">HTMLをコピー</button></span></h4><div class="body"><div class="preview" id="r21"><p>A.リッチコイルモデルは、20万回の耐久試験を実施し、クリアしています。耐久試験の回数と条件はモデルごとに異なります。耐用年数を保証するものではありません。</p></div><pre id="c21">&lt;p&gt;A.リッチコイルモデルは、20万回の耐久試験を実施し、クリアしています。耐久試験の回数と条件はモデルごとに異なります。耐用年数を保証するものではありません。&lt;/p&gt;</pre></div></div>
+<div class="file"><h4><span>shopify/paste/mattress-rich/closing_section_text.html<br><span class="lab">リッチコイル：段の下の文</span></span><span><button class="copy" data-t="r22" data-mode="rich" data-label="表示どおりにコピー">表示どおりにコピー</button> <button class="copy" data-t="c22" data-label="HTMLをコピー">HTMLをコピー</button></span></h4><div class="body"><div class="preview" id="r22"><p>リッチコイルモデルは、寝返りのしやすさや通気に配慮した二層ポケットコイルの構造設計で、睡眠環境づくりに取り組む「構造設計型」のリカバリーマットレスです。</p><p>リッチコイルモデルは、特定の効果をうたうものではありません。※LIMNEのマットレスは医療機器ではありません。不眠症をはじめとする疾患の治療を目的とした製品ではありません。</p><p><a href="https://limne.jp/pages/limne-recovery-mattress" title="構造設計型とは？3つの型の違いと選び方">構造設計型とは？3つの型の違いと選び方</a></p><p>ほかのモデルとの違いは、<a href="https://limne.jp/collections/mattress" title="マットレス一覧">マットレス一覧</a>でご確認いただけます。</p></div><pre id="c22">&lt;p&gt;リッチコイルモデルは、寝返りのしやすさや通気に配慮した二層ポケットコイルの構造設計で、睡眠環境づくりに取り組む「構造設計型」のリカバリーマットレスです。&lt;/p&gt;&lt;p&gt;リッチコイルモデルは、特定の効果をうたうものではありません。※LIMNEのマットレスは医療機器ではありません。不眠症をはじめとする疾患の治療を目的とした製品ではありません。&lt;/p&gt;&lt;p&gt;&lt;a href=&quot;https://limne.jp/pages/limne-recovery-mattress&quot; title=&quot;構造設計型とは？3つの型の違いと選び方&quot;&gt;構造設計型とは？3つの型の違いと選び方&lt;/a&gt;&lt;/p&gt;&lt;p&gt;ほかのモデルとの違いは、&lt;a href=&quot;https://limne.jp/collections/mattress&quot; title=&quot;マットレス一覧&quot;&gt;マットレス一覧&lt;/a&gt;でご確認いただけます。&lt;/p&gt;</pre></div></div>
+<p>機械で読む用の「今の値→新しい値」：<code>shopify/changes_mattress-rich.json</code>（zip に入っています）</p>
+<p>機械で読む用の「今の値→新しい値」：<code>shopify/changes_mattress-entry.json</code>（zip に入っています）</p></main><script>
+document.addEventListener('click',function(e){var b=e.target.closest('button.copy');if(!b)return;var t=document.getElementById(b.dataset.t);
+if(b.dataset.mode==='rich'){var r=document.createRange();r.selectNodeContents(t);var s=getSelection();s.removeAllRanges();s.addRange(r);document.execCommand('copy');s.removeAllRanges();}
+else{navigator.clipboard.writeText(t.textContent);}b.textContent='コピーしました';setTimeout(function(){b.textContent=b.dataset.label},1500);});
+</script></body></html>
